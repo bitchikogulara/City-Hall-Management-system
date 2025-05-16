@@ -1,8 +1,6 @@
 package Model;
 
-import java.io.*;
 import java.util.*;
-
 
 public class CityHall {
     private String name;
@@ -13,6 +11,8 @@ public class CityHall {
     private List<Birth> births;
     private List<Death> deaths;
 
+    private final List<UpdateListener> listeners;
+
     public CityHall(String name) {
         this.name = name;
         this.citizens = new ArrayList<>();
@@ -20,11 +20,28 @@ public class CityHall {
         this.divorces = new ArrayList<>();
         this.births = new ArrayList<>();
         this.deaths = new ArrayList<>();
+        this.listeners = new ArrayList<>();
+    }
+
+    // Listener management
+    public void registerListener(UpdateListener listener) {
+        listeners.add(listener);
+    }
+
+    public void unregisterListener(UpdateListener listener) {
+        listeners.remove(listener);
+    }
+
+    private void notifyListeners() {
+        for (UpdateListener listener : listeners) {
+            listener.onDataUpdated();
+        }
     }
 
     // Citizen management
     public void addCitizen(Citizen citizen) {
         citizens.add(citizen);
+        notifyListeners();
     }
 
     public Citizen findCitizenById(int id) {
@@ -41,6 +58,7 @@ public class CityHall {
     // Birth management
     public void addBirth(Birth birth) {
         births.add(birth);
+        notifyListeners();
     }
 
     public List<Birth> getBirths() {
@@ -50,6 +68,7 @@ public class CityHall {
     // Death management
     public void addDeath(Death death) {
         deaths.add(death);
+        notifyListeners();
     }
 
     public List<Death> getDeaths() {
@@ -59,6 +78,7 @@ public class CityHall {
     // Marriage management
     public void addMarriage(Marriage marriage) {
         marriages.add(marriage);
+        notifyListeners();
     }
 
     public List<Marriage> getMarriages() {
@@ -68,6 +88,7 @@ public class CityHall {
     // Divorce management
     public void addDivorce(Divorce divorce) {
         divorces.add(divorce);
+        notifyListeners();
     }
 
     public List<Divorce> getDivorces() {

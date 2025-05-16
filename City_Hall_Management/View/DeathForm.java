@@ -21,19 +21,51 @@ public class DeathForm extends JFrame {
         this.cityHall = cityHall;
 
         setTitle("Register Death");
-        setSize(400, 250);
-        setLayout(new GridLayout(3, 2, 10, 5));
+        setSize(500, 350);
+        setResizable(false);
+        setLocationRelativeTo(null);
 
-        add(new JLabel("Enter Citizen ID:"));
-        add(citizenIdField);
+        JPanel mainPanel = new JPanel();
+        mainPanel.setBackground(new Color(240, 248, 255));
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
+
+        JLabel title = new JLabel("Register Death");
+        title.setFont(new Font("SansSerif", Font.BOLD, 22));
+        title.setForeground(new Color(30, 60, 110));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        title.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
+
+        mainPanel.add(title);
+        mainPanel.add(createLabeledField("Enter Citizen ID:", citizenIdField));
 
         JButton continueBtn = new JButton("Continue");
+        continueBtn.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        continueBtn.setBackground(Color.WHITE);
+        continueBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        continueBtn.setMaximumSize(new Dimension(200, 40));
         continueBtn.addActionListener(this::loadCitizenAndShowDatePickers);
-        add(new JLabel());
-        add(continueBtn);
 
-        setLocationRelativeTo(null);
+        mainPanel.add(Box.createVerticalStrut(10));
+        mainPanel.add(continueBtn);
+
+        add(mainPanel);
         setVisible(true);
+    }
+
+    private JPanel createLabeledField(String label, JComponent input) {
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+        panel.setBackground(new Color(240, 248, 255));
+        JLabel l = new JLabel(label);
+        l.setPreferredSize(new Dimension(150, 30));
+        l.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        panel.add(l, BorderLayout.WEST);
+        input.setPreferredSize(new Dimension(200, 30));
+        panel.add(input, BorderLayout.CENTER);
+        panel.setMaximumSize(new Dimension(400, 40));
+        panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        return panel;
     }
 
     private void loadCitizenAndShowDatePickers(ActionEvent e) {
@@ -42,17 +74,17 @@ public class DeathForm extends JFrame {
             Citizen c = cityHall.findCitizenById(id);
 
             if (c == null) {
-                JOptionPane.showMessageDialog(this, "Citizen not found.");
+                JOptionPane.showMessageDialog(this, "No citizen found with the provided ID.");
                 return;
             }
 
             if (c.getDeath() != null) {
-                JOptionPane.showMessageDialog(this, "Citizen is already marked as deceased.");
+                JOptionPane.showMessageDialog(this, "This citizen is already registered as deceased.");
                 return;
             }
 
             if (c.getBirth() == null) {
-                JOptionPane.showMessageDialog(this, "Citizen has no birth record.");
+                JOptionPane.showMessageDialog(this, "This citizen has no birth record.");
                 return;
             }
 
@@ -66,33 +98,44 @@ public class DeathForm extends JFrame {
 
     private void showDateSelectionUI() {
         getContentPane().removeAll();
-        setLayout(new GridLayout(4, 2, 10, 5));
+        JPanel panel = new JPanel();
+        panel.setBackground(new Color(240, 248, 255));
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
 
-        add(new JLabel("Day:"));
+        JLabel title = new JLabel("Select Date of Death");
+        title.setFont(new Font("SansSerif", Font.BOLD, 20));
+        title.setForeground(new Color(30, 60, 110));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(title);
+        panel.add(Box.createVerticalStrut(20));
+
         dayBox = new JComboBox<>();
-        add(dayBox);
-
-        add(new JLabel("Month:"));
         monthBox = new JComboBox<>(new String[]{
                 "January", "February", "March", "April", "May", "June",
                 "July", "August", "September", "October", "November", "December"
         });
-        add(monthBox);
-
-        add(new JLabel("Year:"));
         yearBox = new JComboBox<>();
-        add(yearBox);
+
+        panel.add(createLabeledField("Day:", dayBox));
+        panel.add(createLabeledField("Month:", monthBox));
+        panel.add(createLabeledField("Year:", yearBox));
 
         JButton submitButton = new JButton("Register Death");
+        submitButton.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        submitButton.setBackground(Color.WHITE);
+        submitButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        submitButton.setMaximumSize(new Dimension(200, 40));
         submitButton.addActionListener(this::handleDeath);
-        add(new JLabel());
-        add(submitButton);
 
-        populateDateBoxes();
+        panel.add(Box.createVerticalStrut(20));
+        panel.add(submitButton);
 
         monthBox.addActionListener(ev -> updateDayBox());
         yearBox.addActionListener(ev -> updateDayBox());
 
+        add(panel);
+        populateDateBoxes();
         revalidate();
         repaint();
     }
@@ -146,10 +189,16 @@ public class DeathForm extends JFrame {
             Calendar cal = Calendar.getInstance();
             cal.setLenient(false);
             cal.set(year, month, day);
-            Date deathDate = cal.getTime();
+            Date deathDate;
+            try {
+                deathDate = cal.getTime();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Invalid date selected.");
+                return;
+            }
 
             if (deathDate.before(selectedCitizen.getBirth().getDate()) || deathDate.after(new Date())) {
-                JOptionPane.showMessageDialog(this, "Death date must be between birth and today.");
+                JOptionPane.showMessageDialog(this, "Death date must be between the birth date and today.");
                 return;
             }
 
@@ -158,11 +207,11 @@ public class DeathForm extends JFrame {
             selectedCitizen.setDeath(death);
             cityHall.addDeath(death);
 
-            JOptionPane.showMessageDialog(this, "Death registered for " + selectedCitizen.getFullName());
+            JOptionPane.showMessageDialog(this, "Death successfully registered for " + selectedCitizen.getFullName());
             dispose();
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Invalid date.");
+            JOptionPane.showMessageDialog(this, "An error occurred while registering death.");
         }
     }
 }

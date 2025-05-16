@@ -1,4 +1,5 @@
 package View;
+
 import Model.*;
 
 import javax.swing.*;
@@ -6,7 +7,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.Vector;
 import java.util.stream.Collectors;
 
 public class SearchByNameForm extends JFrame {
@@ -24,26 +24,49 @@ public class SearchByNameForm extends JFrame {
         this.citizens = cityHall.getCitizens();
 
         setTitle("Search Citizen by Name");
-        setSize(600, 500);
-        setLayout(new BorderLayout(10, 10));
+        setSize(600, 550);
+        setResizable(false);
+        setLocationRelativeTo(null);
 
-        JPanel topPanel = new JPanel(new BorderLayout(5, 5));
-        topPanel.add(searchField, BorderLayout.CENTER);
-        topPanel.add(searchButton, BorderLayout.EAST);
+        JPanel mainPanel = new JPanel();
+        mainPanel.setBackground(new Color(240, 248, 255));
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
 
-        JScrollPane listScroll = new JScrollPane(citizenList);
-        listScroll.setPreferredSize(new Dimension(600, 120)); // Smaller list panel
+        JLabel title = new JLabel("Search Citizen by Name");
+        title.setFont(new Font("SansSerif", Font.BOLD, 20));
+        title.setForeground(new Color(30, 60, 110));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        title.setBorder(BorderFactory.createEmptyBorder(10, 0, 15, 0));
+        mainPanel.add(title);
+
+        JPanel searchPanel = new JPanel(new BorderLayout(10, 10));
+        searchPanel.setBackground(new Color(240, 248, 255));
+        searchField.setPreferredSize(new Dimension(200, 30));
+        searchPanel.add(searchField, BorderLayout.CENTER);
+
+        searchButton.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        searchButton.setBackground(Color.WHITE);
+        searchButton.setPreferredSize(new Dimension(100, 30));
+        searchPanel.add(searchButton, BorderLayout.EAST);
+
+        mainPanel.add(searchPanel);
+        mainPanel.add(Box.createVerticalStrut(10));
 
         citizenList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        citizenList.setVisibleRowCount(6);
+        JScrollPane listScroll = new JScrollPane(citizenList);
+        listScroll.setPreferredSize(new Dimension(500, 100));
+        mainPanel.add(listScroll);
+        mainPanel.add(Box.createVerticalStrut(10));
 
         resultArea.setEditable(false);
-        resultArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        resultArea.setFont(new Font("Monospaced", Font.PLAIN, 13));
+        resultArea.setMargin(new Insets(10, 10, 10, 10));
+        resultArea.setBorder(BorderFactory.createLineBorder(Color.GRAY));
         JScrollPane resultScroll = new JScrollPane(resultArea);
-        resultScroll.setPreferredSize(new Dimension(600, 250)); // Larger result area
-
-        add(topPanel, BorderLayout.NORTH);
-        add(listScroll, BorderLayout.CENTER);
-        add(resultScroll, BorderLayout.SOUTH);
+        resultScroll.setPreferredSize(new Dimension(500, 260));
+        mainPanel.add(resultScroll);
 
         updateList(citizens);
 
@@ -61,19 +84,29 @@ public class SearchByNameForm extends JFrame {
             }
         });
 
-        setLocationRelativeTo(null);
+        add(mainPanel);
         setVisible(true);
     }
 
     private void handleSearch(ActionEvent e) {
         String text = searchField.getText().toLowerCase().trim();
 
+        if (text.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please enter a name or part of a name to search.");
+            return;
+        }
+
         List<Citizen> filtered = citizens.stream()
                 .filter(c -> c.getFullName().toLowerCase().contains(text))
                 .collect(Collectors.toList());
 
-        updateList(filtered);
-        resultArea.setText("");
+        if (filtered.isEmpty()) {
+            listModel.clear();
+            resultArea.setText("No citizens found matching your search.");
+        } else {
+            updateList(filtered);
+            resultArea.setText("");
+        }
     }
 
     private void updateList(List<Citizen> list) {
@@ -96,31 +129,46 @@ public class SearchByNameForm extends JFrame {
             sb.append("Father: ").append(c.getBirth().getFather() != null ? c.getBirth().getFather().getFullName() : "Unknown").append("\n");
             sb.append("Mother: ").append(c.getBirth().getMother() != null ? c.getBirth().getMother().getFullName() : "Unknown").append("\n");
         } else {
-            sb.append("Birth Date: N/A\n");
-            sb.append("Father: Unknown\n");
-            sb.append("Mother: Unknown\n");
+            sb.append("Birth Date: N/A\nFather: Unknown\nMother: Unknown\n");
         }
 
         sb.append("Status: ").append(c.getDeath() != null ? "Deceased" : "Alive").append("\n");
 
-        String spouseId = "Single";
-        if (c instanceof Male male) {
-            for (Marriage m : male.getMarriages()) {
-                if (m.isActive()) {
-                    spouseId = String.valueOf(m.getBride().getIdNumber());
-                    break;
-                }
-            }
-        } else if (c instanceof Female female) {
-            for (Marriage m : female.getMarriages()) {
-                if (m.isActive()) {
-                    spouseId = String.valueOf(m.getGroom().getIdNumber());
-                    break;
-                }
-            }
+        if (c.getDeath() != null) {
+            sb.append("Death Date: ").append(sdf.format(c.getDeath().getDate())).append("\n");
         }
 
-        sb.append("Spouse ID: ").append(spouseId).append("\n");
+        sb.append("Marriage History:\n");
+
+        if (c instanceof Male male) {
+            if (male.getMarriages().isEmpty()) {
+                sb.append("  No marriages recorded.\n");
+            }
+            for (Marriage m : male.getMarriages()) {
+                sb.append("  Spouse: ").append(m.getBride().getFullName()).append(" (ID: ").append(m.getBride().getIdNumber()).append(")\n");
+                sb.append("  Married On: ").append(sdf.format(m.getDate())).append("\n");
+                if (m.getDivorce() != null) {
+                    sb.append("  Divorced On: ").append(sdf.format(m.getDivorce().getDate())).append("\n");
+                } else {
+                    sb.append("  Status: Active\n");
+                }
+                sb.append("\n");
+            }
+        } else if (c instanceof Female female) {
+            if (female.getMarriages().isEmpty()) {
+                sb.append("  No marriages recorded.\n");
+            }
+            for (Marriage m : female.getMarriages()) {
+                sb.append("  Spouse: ").append(m.getGroom().getFullName()).append(" (ID: ").append(m.getGroom().getIdNumber()).append(")\n");
+                sb.append("  Married On: ").append(sdf.format(m.getDate())).append("\n");
+                if (m.getDivorce() != null) {
+                    sb.append("  Divorced On: ").append(sdf.format(m.getDivorce().getDate())).append("\n");
+                } else {
+                    sb.append("  Status: Active\n");
+                }
+                sb.append("\n");
+            }
+        }
 
         return sb.toString();
     }

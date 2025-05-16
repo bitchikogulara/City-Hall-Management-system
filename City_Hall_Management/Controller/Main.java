@@ -1,4 +1,5 @@
 package Controller;
+
 import Model.*;
 import View.*;
 
@@ -14,66 +15,67 @@ public class Main extends JFrame {
 
         setTitle("City Hall Management");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(400, 450);
-        setLayout(new GridLayout(8, 1, 10, 10));
-
-        JButton addCitizenBtn = new JButton("Add Citizen");
-        JButton viewCitizensBtn = new JButton("View Citizens");
-        JButton marriageBtn = new JButton("Marry Citizens");
-        JButton divorceBtn = new JButton("Divorce Citizen");
-        JButton birthBtn = new JButton("Register Birth");
-        JButton deathBtn = new JButton("Register Death");
-        JButton searchCitizenBtn = new JButton("Search Citizen");
-        JButton exitBtn = new JButton("Exit");
-
-        add(addCitizenBtn);
-        add(viewCitizensBtn);
-        add(marriageBtn);
-        add(divorceBtn);
-        add(birthBtn);
-        add(deathBtn);
-        add(searchCitizenBtn);
-        add(exitBtn);
-
-        addCitizenBtn.addActionListener(this::openAddCitizenForm);
-        viewCitizensBtn.addActionListener(this::openViewCitizens);
-        marriageBtn.addActionListener(this::openMarriageForm);
-        divorceBtn.addActionListener(this::openDivorceForm);
-        birthBtn.addActionListener(this::openBirthForm);
-        deathBtn.addActionListener(this::openDeathForm);
-        searchCitizenBtn.addActionListener(this::openSearchCitizenForm);
-        exitBtn.addActionListener(e -> System.exit(0));
-
+        setSize(500, 550);
         setLocationRelativeTo(null);
+        setResizable(false);
+
+        // Main container panel with background
+        JPanel mainPanel = new JPanel();
+        mainPanel.setBackground(new Color(230, 240, 255)); // light pastel blue
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+
+        // Title label
+        JLabel title = new JLabel("City Hall Management");
+        title.setFont(new Font("SansSerif", Font.BOLD, 26));
+        title.setForeground(new Color(30, 60, 110)); // deep blue
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        title.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
+        mainPanel.add(title);
+
+        // Buttons
+        String[] labels = {
+                "Add Citizen", "View Citizens", "Marry Citizens", "Divorce Citizen",
+                "Register Birth", "Register Death", "Search Citizen", "Exit"
+        };
+
+        for (String label : labels) {
+            JButton button = createStyledButton(label);
+            mainPanel.add(button);
+            mainPanel.add(Box.createVerticalStrut(12));
+
+            // Link button actions
+            button.addActionListener(e -> handleAction(label));
+        }
+
+        add(mainPanel);
         setVisible(true);
     }
 
-    private void openAddCitizenForm(ActionEvent e) {
-        new AddCitizenForm(cityHall);
+    private JButton createStyledButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        button.setBackground(Color.WHITE);
+        button.setForeground(new Color(30, 30, 30));
+        button.setFocusPainted(false);
+        button.setPreferredSize(new Dimension(300, 45));
+        button.setMaximumSize(new Dimension(300, 45));
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180)));
+        return button;
     }
 
-    private void openViewCitizens(ActionEvent e) {
-        new ViewCitizensForm(cityHall);
-    }
-
-    private void openMarriageForm(ActionEvent e) {
-        new MarriageForm(cityHall);
-    }
-
-    private void openDivorceForm(ActionEvent e) {
-        new DivorceForm(cityHall);
-    }
-
-    private void openBirthForm(ActionEvent e) {
-        new BirthForm(cityHall);
-    }
-
-    private void openDeathForm(ActionEvent e) {
-        new DeathForm(cityHall);
-    }
-
-    private void openSearchCitizenForm(ActionEvent e) {
-        new SearchCitizenMenu(cityHall);
+    private void handleAction(String action) {
+        switch (action) {
+            case "Add Citizen" -> new AddCitizenForm(cityHall);
+            case "View Citizens" -> new ViewCitizensForm(cityHall);
+            case "Marry Citizens" -> new MarriageForm(cityHall);
+            case "Divorce Citizen" -> new DivorceForm(cityHall);
+            case "Register Birth" -> new BirthForm(cityHall);
+            case "Register Death" -> new DeathForm(cityHall);
+            case "Search Citizen" -> new SearchCitizenMenu(cityHall);
+            case "Exit" -> System.exit(0);
+        }
     }
 
     public static void main(String[] args) {
