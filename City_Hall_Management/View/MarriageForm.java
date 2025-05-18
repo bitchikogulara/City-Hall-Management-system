@@ -1,20 +1,18 @@
 package View;
 
-import Model.*;
+import Controller.MarriageController;
+import Model.CityHall;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.util.Date;
 
 public class MarriageForm extends JFrame {
     private final JTextField groomIdField = new JTextField();
     private final JTextField brideIdField = new JTextField();
-
-    private final CityHall cityHall;
+    private final MarriageController controller;
 
     public MarriageForm(CityHall cityHall) {
-        this.cityHall = cityHall;
+        this.controller = new MarriageController(cityHall, this);
 
         setTitle("Register Marriage");
         setSize(450, 250);
@@ -41,7 +39,8 @@ public class MarriageForm extends JFrame {
         submitButton.setBackground(Color.WHITE);
         submitButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         submitButton.setMaximumSize(new Dimension(220, 40));
-        submitButton.addActionListener(this::handleMarriage);
+        submitButton.addActionListener(e ->
+                controller.handleMarriage(groomIdField.getText().trim(), brideIdField.getText().trim()));
 
         mainPanel.add(Box.createVerticalStrut(20));
         mainPanel.add(submitButton);
@@ -65,79 +64,11 @@ public class MarriageForm extends JFrame {
         return panel;
     }
 
-    private void handleMarriage(ActionEvent e) {
-        try {
-            String groomInput = groomIdField.getText().trim();
-            String brideInput = brideIdField.getText().trim();
+    public void showMessage(String msg) {
+        JOptionPane.showMessageDialog(this, msg);
+    }
 
-            if (groomInput.isEmpty() || brideInput.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please enter both Groom and Bride IDs.");
-                return;
-            }
-
-            int groomId = Integer.parseInt(groomInput);
-            int brideId = Integer.parseInt(brideInput);
-
-            Citizen g = cityHall.findCitizenById(groomId);
-            Citizen b = cityHall.findCitizenById(brideId);
-
-            if (g == null || b == null) {
-                JOptionPane.showMessageDialog(this, "One or both citizens were not found. Please check the IDs.");
-                return;
-            }
-
-            if (!(g instanceof Male)) {
-                JOptionPane.showMessageDialog(this, "Groom must be a male citizen.");
-                return;
-            }
-
-            if (!(b instanceof Female)) {
-                JOptionPane.showMessageDialog(this, "Bride must be a female citizen.");
-                return;
-            }
-
-            Male groom = (Male) g;
-            Female bride = (Female) b;
-
-            if (groom.getDeath() != null) {
-                JOptionPane.showMessageDialog(this, "The groom is deceased and cannot marry.");
-                return;
-            }
-
-            if (bride.getDeath() != null) {
-                JOptionPane.showMessageDialog(this, "The bride is deceased and cannot marry.");
-                return;
-            }
-
-            for (Marriage m : groom.getMarriages()) {
-                if (m.isActive()) {
-                    JOptionPane.showMessageDialog(this, "The groom is already married.");
-                    return;
-                }
-            }
-
-            for (Marriage m : bride.getMarriages()) {
-                if (m.isActive()) {
-                    JOptionPane.showMessageDialog(this, "The bride is already married.");
-                    return;
-                }
-            }
-
-            int marriageId = cityHall.getMarriages().size() + 1;
-            Marriage marriage = new Marriage(marriageId, groom, bride, new Date(), cityHall);
-            
-            groom.addMarriage(marriage);
-            bride.addMarriage(marriage);
-            cityHall.addMarriage(marriage);
-
-            JOptionPane.showMessageDialog(this, "Marriage successfully registered between " +
-                    groom.getFullName() + " and " + bride.getFullName() + ".");
-            dispose();
-
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "IDs must be numeric values.");
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "An unexpected error occurred.");
-        }
+    public void closeForm() {
+        dispose();
     }
 }

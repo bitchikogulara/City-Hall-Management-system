@@ -1,20 +1,23 @@
 package View;
 
-import Model.*;
+import Controller.ViewCitizensController;
+import Model.CityHall;
+import Model.UpdateListener;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.text.SimpleDateFormat;
 
 public class ViewCitizensForm extends JFrame implements UpdateListener {
     private final CityHall cityHall;
+    private final ViewCitizensController controller;
     private DefaultTableModel tableModel;
 
     public ViewCitizensForm(CityHall cityHall) {
         this.cityHall = cityHall;
-        cityHall.registerListener(this);  // Register to receive updates
+        this.controller = new ViewCitizensController(cityHall, this);
+        cityHall.registerListener(this);
 
         setTitle("All Registered Citizens");
         setSize(1000, 500);
@@ -57,63 +60,12 @@ public class ViewCitizensForm extends JFrame implements UpdateListener {
         add(mainPanel);
         setVisible(true);
 
-        loadData(); // Initial load
-    }
-
-    private void loadData() {
-        tableModel.setRowCount(0);
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        //System.out.println("here load");
-
-        for (Citizen c : cityHall.getCitizens()) {
-            //System.out.println("here for");
-            String id = String.valueOf(c.getIdNumber());
-            String name = c.getFullName();
-            String gender = c instanceof Male ? "Male" : "Female";
-
-            String birthDate = "N/A";
-            String fatherName = "Unknown";
-            String motherName = "Unknown";
-
-            if (c.getBirth() != null) {
-                birthDate = sdf.format(c.getBirth().getDate());
-                if (c.getBirth().getFather() != null)
-                    fatherName = c.getBirth().getFather().getFullName();
-                if (c.getBirth().getMother() != null)
-                    motherName = c.getBirth().getMother().getFullName();
-            }
-
-            String lifeStatus = (c.getDeath() != null) ? "Deceased" : "Alive";
-
-            String spouseId = "Single";
-            //System.out.println("here 1");
-            if (c instanceof Male male) {
-                //System.out.println("here 2.1");
-                for (Marriage m : male.getMarriages()) {
-                    if (m.isActive()) {
-                        spouseId = String.valueOf(m.getBride().getIdNumber());
-                        break;
-                    }
-                }
-            } else if (c instanceof Female female) {
-                //System.out.println("here 2.2");
-                for (Marriage m : female.getMarriages()) {
-                    if (m.isActive()) {
-                        spouseId = String.valueOf(m.getGroom().getIdNumber());
-                        break;
-                    }
-                }
-            }
-
-            tableModel.addRow(new Object[]{
-                    id, name, gender, birthDate, fatherName, motherName, lifeStatus, spouseId
-            });
-        }
+        controller.loadData(tableModel); // Initial load
     }
 
     @Override
     public void onDataUpdated() {
-        loadData();
+        controller.loadData(tableModel);
     }
 
     @Override
@@ -121,4 +73,4 @@ public class ViewCitizensForm extends JFrame implements UpdateListener {
         cityHall.unregisterListener(this);
         super.dispose();
     }
-}  
+}

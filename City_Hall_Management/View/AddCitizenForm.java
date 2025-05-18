@@ -1,11 +1,11 @@
 package View;
 
-import Model.*;
+import Controller.AddCitizenController;
+import Model.CityHall;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.util.*;
+import java.util.Calendar;
 
 public class AddCitizenForm extends JFrame {
     private final JTextField firstNameField = new JTextField();
@@ -13,7 +13,6 @@ public class AddCitizenForm extends JFrame {
     private final JTextField fatherIdField = new JTextField();
     private final JTextField motherIdField = new JTextField();
     private final JComboBox<String> genderBox = new JComboBox<>(new String[]{"Male", "Female"});
-
     private final JComboBox<Integer> dayBox = new JComboBox<>();
     private final JComboBox<String> monthBox = new JComboBox<>(new String[]{
             "January", "February", "March", "April", "May", "June",
@@ -21,10 +20,10 @@ public class AddCitizenForm extends JFrame {
     });
     private final JComboBox<Integer> yearBox = new JComboBox<>();
 
-    private final CityHall cityHall;
+    private final AddCitizenController controller;
 
     public AddCitizenForm(CityHall cityHall) {
-        this.cityHall = cityHall;
+        this.controller = new AddCitizenController(cityHall, this);
 
         setTitle("Add New Citizen");
         setSize(500, 600);
@@ -57,7 +56,16 @@ public class AddCitizenForm extends JFrame {
         submitButton.setBackground(Color.WHITE);
         submitButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         submitButton.setMaximumSize(new Dimension(200, 40));
-        submitButton.addActionListener(this::handleAddCitizen);
+        submitButton.addActionListener(e -> controller.handleAddCitizen(
+                firstNameField.getText().trim(),
+                lastNameField.getText().trim(),
+                (Integer) dayBox.getSelectedItem(),
+                monthBox.getSelectedIndex(),
+                (Integer) yearBox.getSelectedItem(),
+                (String) genderBox.getSelectedItem(),
+                fatherIdField.getText().trim(),
+                motherIdField.getText().trim()
+        ));
 
         mainPanel.add(Box.createVerticalStrut(20));
         mainPanel.add(submitButton);
@@ -117,110 +125,11 @@ public class AddCitizenForm extends JFrame {
         }
     }
 
-    private void handleAddCitizen(ActionEvent e) {
-        try {
-            String fName = firstNameField.getText().trim();
-            String lName = lastNameField.getText().trim();
-            
-            if (fName.isEmpty() || lName.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "First name and last name cannot be empty.");
-                return;
-            }
+    public void showMessage(String msg) {
+        JOptionPane.showMessageDialog(this, msg);
+    }
 
-            if (!fName.matches("[A-Za-z]+") || !lName.matches("[A-Za-z]+")) {
-                JOptionPane.showMessageDialog(this, "Names must contain only letters without spaces or digits.");
-                return;
-            }
-
-            int day = (Integer) dayBox.getSelectedItem();
-            int month = monthBox.getSelectedIndex();
-            int year = (Integer) yearBox.getSelectedItem();
-
-            Calendar cal = Calendar.getInstance();
-            cal.setLenient(false);
-            cal.set(year, month, day);
-            Date birthDate;
-            try {
-                birthDate = cal.getTime();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Invalid birth date selected.");
-                return;
-            }
-
-            if (birthDate.after(new Date())) {
-                JOptionPane.showMessageDialog(this, "Birth date cannot be in the future.");
-                return;
-            }
-
-            Male father = null;
-            Female mother = null;
-
-            String fatherText = fatherIdField.getText().trim();
-            if (!fatherText.isEmpty()) {
-                try {
-                    int fatherId = Integer.parseInt(fatherText);
-                    Citizen c = cityHall.findCitizenById(fatherId);
-                    if (c == null) {
-                        JOptionPane.showMessageDialog(this, "No citizen found with Father ID: " + fatherId);
-                        return;
-                    }
-                    if (c instanceof Male) {
-                        father = (Male) c;
-                    } else {
-                        JOptionPane.showMessageDialog(this, "The selected father must be male.");
-                        return;
-                    }
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(this, "Father ID must be a number.");
-                    return;
-                }
-            }
-
-            String motherText = motherIdField.getText().trim();
-            if (!motherText.isEmpty()) {
-                try {
-                    int motherId = Integer.parseInt(motherText);
-                    Citizen c = cityHall.findCitizenById(motherId);
-                    if (c == null) {
-                        JOptionPane.showMessageDialog(this, "No citizen found with Mother ID: " + motherId);
-                        return;
-                    }
-                    if (c instanceof Female) {
-                        mother = (Female) c;
-                    } else {
-                        JOptionPane.showMessageDialog(this, "The selected mother must be female.");
-                        return;
-                    }
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(this, "Mother ID must be a number.");
-                    return;
-                }
-            }
-
-            int id = cityHall.getCitizens().size() + 100;
-            Birth birth = new Birth(id, birthDate, null, cityHall, father, mother);
-
-            Citizen newCitizen;
-            if (genderBox.getSelectedItem().equals("Male")) {
-                newCitizen = new Male(id, fName, lName, birth, cityHall);
-            } else {
-                newCitizen = new Female(id, fName, lName, birth, cityHall);
-            }
-
-            birth = new Birth(id, birthDate, newCitizen, cityHall, father, mother);
-            newCitizen.setBirth(birth);
-
-            if (father != null) father.addChild(newCitizen);
-            if (mother != null) mother.addChild(newCitizen);
-
-            cityHall.addCitizen(newCitizen);
-            cityHall.addBirth(birth);
-
-            JOptionPane.showMessageDialog(this, "Citizen added successfully.\nName: " + newCitizen.getFullName() + "\nID: " + newCitizen.getIdNumber());
-            dispose();
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "An unexpected error occurred. Please check the entered data.");
-        }
+    public void closeForm() {
+        dispose();
     }
 }

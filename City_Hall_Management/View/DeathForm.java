@@ -1,12 +1,11 @@
 package View;
 
-import Model.*;
+import Controller.DeathController;
+import Model.CityHall;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.util.Calendar;
-import java.util.Date;
 
 public class DeathForm extends JFrame {
     private final JTextField citizenIdField = new JTextField();
@@ -14,11 +13,10 @@ public class DeathForm extends JFrame {
     private JComboBox<String> monthBox;
     private JComboBox<Integer> yearBox;
 
-    private final CityHall cityHall;
-    private Citizen selectedCitizen;
+    private final DeathController controller;
 
     public DeathForm(CityHall cityHall) {
-        this.cityHall = cityHall;
+        this.controller = new DeathController(cityHall, this);
 
         setTitle("Register Death");
         setSize(500, 350);
@@ -35,7 +33,6 @@ public class DeathForm extends JFrame {
         title.setForeground(new Color(30, 60, 110));
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
         title.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
-
         mainPanel.add(title);
         mainPanel.add(createLabeledField("Enter Citizen ID:", citizenIdField));
 
@@ -44,7 +41,7 @@ public class DeathForm extends JFrame {
         continueBtn.setBackground(Color.WHITE);
         continueBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         continueBtn.setMaximumSize(new Dimension(200, 40));
-        continueBtn.addActionListener(this::loadCitizenAndShowDatePickers);
+        continueBtn.addActionListener(e -> controller.loadCitizenAndShowDatePickers(citizenIdField.getText().trim()));
 
         mainPanel.add(Box.createVerticalStrut(10));
         mainPanel.add(continueBtn);
@@ -68,36 +65,9 @@ public class DeathForm extends JFrame {
         return panel;
     }
 
-    private void loadCitizenAndShowDatePickers(ActionEvent e) {
-        try {
-            int id = Integer.parseInt(citizenIdField.getText().trim());
-            Citizen c = cityHall.findCitizenById(id);
-
-            if (c == null) {
-                JOptionPane.showMessageDialog(this, "No citizen found with the provided ID.");
-                return;
-            }
-
-            if (c.getDeath() != null) {
-                JOptionPane.showMessageDialog(this, "This citizen is already registered as deceased.");
-                return;
-            }
-
-            if (c.getBirth() == null) {
-                JOptionPane.showMessageDialog(this, "This citizen has no birth record.");
-                return;
-            }
-
-            this.selectedCitizen = c;
-            showDateSelectionUI();
-
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Please enter a valid numeric ID.");
-        }
-    }
-
-    private void showDateSelectionUI() {
+    public void showDateSelectionUI(Runnable onSubmit, Calendar birthDate) {
         getContentPane().removeAll();
+
         JPanel panel = new JPanel();
         panel.setBackground(new Color(240, 248, 255));
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -126,25 +96,22 @@ public class DeathForm extends JFrame {
         submitButton.setBackground(Color.WHITE);
         submitButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         submitButton.setMaximumSize(new Dimension(200, 40));
-        submitButton.addActionListener(this::handleDeath);
+        submitButton.addActionListener(e -> onSubmit.run());
 
         panel.add(Box.createVerticalStrut(20));
         panel.add(submitButton);
 
-        monthBox.addActionListener(ev -> updateDayBox());
-        yearBox.addActionListener(ev -> updateDayBox());
+        monthBox.addActionListener(e -> updateDayBox());
+        yearBox.addActionListener(e -> updateDayBox());
 
         add(panel);
-        populateDateBoxes();
+        populateDateBoxes(birthDate);
         revalidate();
         repaint();
     }
 
-    private void populateDateBoxes() {
-        Calendar birthCal = Calendar.getInstance();
-        birthCal.setTime(selectedCitizen.getBirth().getDate());
-
-        int birthYear = birthCal.get(Calendar.YEAR);
+    private void populateDateBoxes(Calendar birthDate) {
+        int birthYear = birthDate.get(Calendar.YEAR);
         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
 
         yearBox.removeAllItems();
@@ -154,7 +121,6 @@ public class DeathForm extends JFrame {
 
         yearBox.setSelectedItem(currentYear);
         monthBox.setSelectedIndex(Calendar.getInstance().get(Calendar.MONTH));
-
         updateDayBox();
     }
 
@@ -180,38 +146,23 @@ public class DeathForm extends JFrame {
         }
     }
 
-    private void handleDeath(ActionEvent e) {
-        try {
-            int day = (Integer) dayBox.getSelectedItem();
-            int month = monthBox.getSelectedIndex();
-            int year = (Integer) yearBox.getSelectedItem();
+    public int getSelectedDay() {
+        return (Integer) dayBox.getSelectedItem();
+    }
 
-            Calendar cal = Calendar.getInstance();
-            cal.setLenient(false);
-            cal.set(year, month, day);
-            Date deathDate;
-            try {
-                deathDate = cal.getTime();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Invalid date selected.");
-                return;
-            }
+    public int getSelectedMonth() {
+        return monthBox.getSelectedIndex();
+    }
 
-            if (deathDate.before(selectedCitizen.getBirth().getDate()) || deathDate.after(new Date())) {
-                JOptionPane.showMessageDialog(this, "Death date must be between the birth date and today.");
-                return;
-            }
+    public int getSelectedYear() {
+        return (Integer) yearBox.getSelectedItem();
+    }
 
-            int deathId = cityHall.getDeaths().size() + 1;
-            Death death = new Death(deathId, deathDate, selectedCitizen, cityHall);
-            selectedCitizen.setDeath(death);
-            cityHall.addDeath(death);
+    public void showMessage(String message) {
+        JOptionPane.showMessageDialog(this, message);
+    }
 
-            JOptionPane.showMessageDialog(this, "Death successfully registered for " + selectedCitizen.getFullName());
-            dispose();
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "An error occurred while registering death.");
-        }
+    public void closeForm() {
+        dispose();
     }
 }

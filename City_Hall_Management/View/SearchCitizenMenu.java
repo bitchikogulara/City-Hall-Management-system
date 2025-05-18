@@ -1,16 +1,18 @@
 package View;
 
-import Model.*;
+import Controller.SearchCitizenMenuController;
+import Model.CityHall;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 
 public class SearchCitizenMenu extends JFrame {
     private final CityHall cityHall;
+    private final SearchCitizenMenuController controller;
 
     public SearchCitizenMenu(CityHall cityHall) {
         this.cityHall = cityHall;
+        this.controller = new SearchCitizenMenuController(cityHall, this);
 
         setTitle("Search Citizen");
         setSize(350, 200);
@@ -43,20 +45,14 @@ public class SearchCitizenMenu extends JFrame {
             mainPanel.add(Box.createVerticalStrut(15));
         }
 
-        searchByIdBtn.addActionListener(this::openSearchById);
-        searchByNameBtn.addActionListener(this::openSearchByName);
+        searchByIdBtn.addActionListener(e -> controller.openSearchById());
+        searchByNameBtn.addActionListener(e -> controller.openSearchByName());
 
         add(mainPanel);
         setVisible(true);
     }
 
-    private void openSearchById(ActionEvent e) {
-        new SearchByIDForm(cityHall);
-        dispose();
-    }
-
-    private void openSearchByName(ActionEvent e) {
-        new SearchByNameForm(cityHall);
+    public void closeWindow() {
         dispose();
     }
 }
