@@ -18,10 +18,6 @@ public class SearchByNameController {
     }
 
     public void handleSearch(String text) {
-        if (text.isEmpty()) {
-            JOptionPane.showMessageDialog(view, "Please enter a name or part of a name to search.");
-            return;
-        }
 
         List<Citizen> filtered = cityHall.getCitizens().stream()
                 .filter(c -> c.getFullName().toLowerCase().contains(text.toLowerCase()))

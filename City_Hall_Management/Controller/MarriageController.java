@@ -55,6 +55,27 @@ public class MarriageController {
                 return;
             }
 
+            if (groom.getBirth() == null || bride.getBirth() == null) {
+                view.showMessage("Both citizens must have a valid birth record.");
+                return;
+            }
+    
+            Date today = new Date();
+            long millisInYear = 1000L * 60 * 60 * 24 * 365;
+    
+            long groomAge = (today.getTime() - groom.getBirth().getDate().getTime()) / millisInYear;
+            long brideAge = (today.getTime() - bride.getBirth().getDate().getTime()) / millisInYear;
+    
+            if (groomAge < 18) {
+                view.showMessage("Groom must be at least 18 years old.");
+                return;
+            }
+    
+            if (brideAge < 18) {
+                view.showMessage("Bride must be at least 18 years old.");
+                return;
+            }
+
             for (Marriage m : groom.getMarriages()) {
                 if (m.isActive()) {
                     view.showMessage("The groom is already married.");
